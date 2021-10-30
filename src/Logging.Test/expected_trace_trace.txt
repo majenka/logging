@@ -1,5 +1,0 @@
-[Trace]:	Logging.Test.FileLoggerTests	Trace
-[Debug]:	Logging.Test.FileLoggerTests	Debug
-[Information]:	Logging.Test.FileLoggerTests	Information
-[Warning]:	Logging.Test.FileLoggerTests	Warning
-[Error]:	Logging.Test.FileLoggerTests	Error

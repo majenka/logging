@@ -24,6 +24,16 @@ namespace Logging.Test
             return hostBuilder.Build();
         }
 
+        private string GetActualPath(string filename)
+        {
+            return Path.Combine("../../../", "Actual", filename);
+        }
+
+        private string GetExpectedPath(string actualPath)
+        {
+            return actualPath.Replace("Actual", "Expected");
+        }
+
         private void DeleteLogFile(string logFileName)
         {
             if (File.Exists(logFileName))
@@ -50,7 +60,7 @@ namespace Logging.Test
         [Test]
         public void TestTraceTrace()
         {
-            var logFileName = "../../../actual_trace_trace.txt";
+            var logFileName = GetActualPath("trace_trace.txt");
             DeleteLogFile(logFileName);
 
             var host = CreateHost(logFileName, LogLevel.Trace, LogLevel.Trace);
@@ -58,13 +68,13 @@ namespace Logging.Test
 
             LogEach(logger);
 
-            FileAssert.AreEqual("../../../expected_trace_trace.txt", logFileName);
+            FileAssert.AreEqual(GetExpectedPath(logFileName), logFileName);
         }
 
         [Test]
         public void TestTraceWarning()
         {
-            var logFileName = "../../../actual_trace_warning.txt";
+            var logFileName = GetActualPath("trace_warning.txt");
             DeleteLogFile(logFileName);
 
             var host = CreateHost(logFileName, LogLevel.Trace, LogLevel.Warning);
@@ -72,13 +82,13 @@ namespace Logging.Test
 
             LogEach(logger);
 
-            FileAssert.AreEqual("../../../expected_trace_warning.txt", logFileName);
+            FileAssert.AreEqual(GetExpectedPath(logFileName), logFileName);
         }
 
         [Test]
         public void TestWarningTrace()
         {
-            var logFileName = "../../../actual_warning_trace.txt";
+            var logFileName = GetActualPath("warning_trace.txt");
             DeleteLogFile(logFileName);
 
             var host = CreateHost(logFileName, LogLevel.Warning, LogLevel.Trace);
@@ -86,13 +96,13 @@ namespace Logging.Test
 
             LogEach(logger);
 
-            FileAssert.AreEqual("../../../expected_trace_warning.txt", logFileName);
+            FileAssert.AreEqual(GetExpectedPath(logFileName), logFileName);
         }
 
         [Test]
         public void TestTraceInformation()
         {
-            var logFileName = "../../../actual_trace_information.txt";
+            var logFileName = GetActualPath("trace_information.txt");
             DeleteLogFile(logFileName);
 
             var host = CreateHost(logFileName, LogLevel.Trace, LogLevel.Information);
@@ -100,13 +110,13 @@ namespace Logging.Test
 
             LogEach(logger);
 
-            FileAssert.AreEqual("../../../expected_trace_information.txt", logFileName);
+            FileAssert.AreEqual(GetExpectedPath(logFileName), logFileName);
         }
 
         [Test]
         public void TestFileLock()
         {
-            var logFileName = "../../../actual_file_lock.txt";
+            var logFileName = GetActualPath("file_lock.txt");
             DeleteLogFile(logFileName);
 
             Parallel.For(0, 100, (id) =>
@@ -120,13 +130,13 @@ namespace Logging.Test
                 }
             });
 
-            Assert.AreEqual(new FileInfo("../../../expected_file_lock.txt").Length, new FileInfo(logFileName).Length);
+            Assert.AreEqual(new FileInfo(GetExpectedPath(logFileName)).Length, new FileInfo(logFileName).Length);
         }
 
         [Test]
         public void TestRollOver()
         {
-            var logFileName = "../../../actual_roll.txt";
+            var logFileName = GetActualPath("roll.txt"); 
             DeleteLogFile(logFileName);
 
             var host = CreateHost(logFileName, LogLevel.Information, LogLevel.Trace, 1000);
@@ -137,7 +147,7 @@ namespace Logging.Test
                 logger.LogInformation($"Testing file roll over {i}");
             }
 
-            var expectedFileName = "../../../expected_roll.txt";
+            var expectedFileName = GetExpectedPath(logFileName);
 
             FileAssert.AreEqual(expectedFileName, logFileName);
             FileAssert.AreEqual(expectedFileName + ".1", logFileName + ".1");
@@ -151,7 +161,7 @@ namespace Logging.Test
         [Test]
         public void TestStackTrace()
         {
-            var logFileName = "../../../actual_exception.txt";
+            var logFileName = GetActualPath("stacktrace.txt");
             DeleteLogFile(logFileName);
 
             var host = CreateHost(logFileName, LogLevel.Information, LogLevel.Trace, 1000);
@@ -175,7 +185,7 @@ namespace Logging.Test
                 logger.LogError(ex, "An error occurred.");
             }
 
-            FileAssert.AreEqual("../../../expected_exception.txt", logFileName);
+            FileAssert.AreEqual(GetExpectedPath(logFileName), logFileName);
         }
     }
 }
