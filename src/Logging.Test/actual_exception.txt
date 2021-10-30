@@ -1,0 +1,6 @@
+[Error]:	Logging.Test.FileLoggerTests	An error occurred.
+Stack trace:
+	System.ArgumentException:	Something went wrong calculating the number of foos in bar. See the inner exception for details.
+		   at Logging.Test.FileLoggerTests.TestStackTrace() in D:\Projects\Majenka\Logging\src\Logging.Test\FileLoggerTests.cs:line 170
+	System.DivideByZeroException:	Attempted to divide by zero.
+		   at Logging.Test.FileLoggerTests.TestStackTrace() in D:\Projects\Majenka\Logging\src\Logging.Test\FileLoggerTests.cs:line 166

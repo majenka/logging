@@ -1,36 +1,40 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Majenka.Logging
 {
     public class FileLogger : ILogger
     {
-        private string logFileDirectory;
-        private long maxFileSize;
-        private int maxRetainedFiles;
-        private string logFilePath;
-        private LogLevel minLogLevel;
+        private readonly string categoryName;
+        private readonly string logFileDirectory;
+        private FileLoggerOptions options;
         private FileInfo fileInfo;
 
-        public FileLogger(string logFilePath, LogLevel minLogLevel, long maxFileSize, int maxRetainedFiles)
-        {
-            logFileDirectory = Path.GetDirectoryName(logFilePath) ?? throw new ArgumentException("logFilePath is empty or invalid");
-            if (maxFileSize == 0) throw new ArgumentException("maxFileSize cannot be 0");
+        private static readonly object criticalSection = new object();
 
-            this.maxFileSize = maxFileSize;
-            this.maxRetainedFiles = maxRetainedFiles;
-            this.logFilePath = logFilePath;
-            this.minLogLevel = minLogLevel;
+        public FileLogger(string categoryName, FileLoggerOptions options)
+        {
+            this.categoryName = categoryName;
+            this.options = options;
+
+            if (options.MaxFileSize <= 0) throw new ArgumentException("maxFileSize must be greater than 0");
+            if (options.MaxRetainedFiles < 0) throw new ArgumentException("maxRetainedFiles cannot less than 0");
+            if (options.Path == null ) throw new ArgumentException("path cannot be empty");
+
+            logFileDirectory = Path.GetDirectoryName(options.Path) ?? throw new ArgumentException("path is invalid");
 
             Directory.CreateDirectory(logFileDirectory);
-            fileInfo = new FileInfo(this.logFilePath);
+            fileInfo = new FileInfo(options.Path);
         }
 
         public Boolean IsEnabled(LogLevel logLevel)
         {
-            return logLevel >= minLogLevel;
+            return logLevel >= options.MinLogLevel;
         }
 
         public IDisposable? BeginScope<TState>(TState state)
@@ -45,48 +49,69 @@ namespace Majenka.Logging
                 return;
             }
 
-            if (maxRetainedFiles == 0 && maxFileSize > 0 && File.Exists(logFilePath) && fileInfo.Length > maxFileSize)
+            if (options.MaxRetainedFiles == 0 && File.Exists(options.Path) && fileInfo.Length > options.MaxFileSize)
             {
                 return;
             }
 
-            using (var streamWriter = File.AppendText(logFilePath))
+            if (options.Path == null)
             {
-                streamWriter.Write(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff zzz"));
-                streamWriter.Write($"\t[{logLevel}]:\t");
-                streamWriter.WriteLine(formatter(state, exception));
+                return;
+            }
 
-                if (exception != null)
+            lock (criticalSection)
+            {
+                using (var streamWriter = File.AppendText(options.Path))
                 {
-                    streamWriter.WriteLine("Stack trace:");
-                }
-
-                while (exception != null)
-                {
-                    streamWriter.WriteLine($"\t{exception.GetType()}:\t{exception.Message}");
-
-                    if (exception.StackTrace is string stackTrace)
+                    if (options.LogDate)
                     {
-                        streamWriter.WriteLine($"\t\t{stackTrace}");
+                        streamWriter.Write(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff zzz"));
+                        streamWriter.Write($"\t");
                     }
 
-                    exception = exception.InnerException;
+                    streamWriter.Write($"[{logLevel}]:\t");
+
+                    if (categoryName != null)
+                    {
+                        streamWriter.Write($"{categoryName}\t");
+                    }
+
+                    streamWriter.WriteLine(formatter(state, exception));
+
+                    if (exception != null)
+                    {
+                        streamWriter.WriteLine("Stack trace:");
+                    }
+
+                    while (exception != null)
+                    {
+                        streamWriter.WriteLine($"\t{exception.GetType()}:\t{exception.Message}");
+
+                        if (exception.StackTrace is string stackTrace)
+                        {
+                            streamWriter.WriteLine($"\t\t{stackTrace}");
+                        }
+
+                        exception = exception.InnerException;
+                    }
+
+                    streamWriter.Flush();
+                }
+
+                if (options.MaxRetainedFiles > 0 && options.MaxFileSize <= new FileInfo(options.Path).Length)
+                {
+                    RollFile(options.Path, 1);
                 }
             }
-
-            if (maxRetainedFiles > 0 && maxFileSize <= new FileInfo(logFilePath).Length)
-            {
-                RollFile(logFilePath, 1);
-            }
         }
-
+        
         void RollFile(string fileToRoll, int toFileNumber)
         {
-            var rollFilePath = $"{logFilePath}.{toFileNumber}";
+            var rollFilePath = $"{options.Path}.{toFileNumber}";
 
             if (File.Exists(rollFilePath))
             {
-                if(toFileNumber == maxRetainedFiles)
+                if(toFileNumber == options.MaxRetainedFiles)
                 {
                     File.Delete(rollFilePath);
                 }

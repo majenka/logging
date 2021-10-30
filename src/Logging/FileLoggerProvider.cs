@@ -1,21 +1,29 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
+using System.IO;
 
 namespace Majenka.Logging
 {
     [ProviderAlias("File")]
     public class FileLoggerProvider : ILoggerProvider
     {
-        private ILogger Logger { get; }
-
-        public FileLoggerProvider(string logFilePath, LogLevel logLevel = LogLevel.Information, long maxFileSize = 5242880, int maxRetainedFiles = 5)
+        private FileLoggerOptions options { get; }
+            
+        public FileLoggerProvider(string logFilePath, LogLevel logLevel, long maxFileSize, int maxRetainedFiles, bool logDate)
         {
-            Logger = new FileLogger(logFilePath, logLevel, maxFileSize, maxRetainedFiles);
+            options = new FileLoggerOptions
+            {
+                Path = logFilePath,
+                MinLogLevel = logLevel,
+                MaxFileSize = maxFileSize,
+                MaxRetainedFiles = maxRetainedFiles,
+                LogDate = logDate
+            };
         }
 
         public ILogger CreateLogger(string categoryName)
         {
-            return Logger;
+            return new FileLogger(categoryName, options);
         }
 
         public void Dispose()
