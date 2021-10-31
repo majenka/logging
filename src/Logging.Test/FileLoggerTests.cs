@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using NUnit.Framework;
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace Logging.Test
@@ -31,7 +32,14 @@ namespace Logging.Test
 
         private string GetExpectedPath(string actualPath)
         {
-            return actualPath.Replace("Actual", "Expected");
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return actualPath.Replace("Actual", "Expected");
+            }
+            else
+            {
+                return actualPath.Replace("Actual", "Expected.Lx");
+            }
         }
 
         private void DeleteLogFile(string logFileName)
@@ -185,7 +193,7 @@ namespace Logging.Test
                 logger.LogError(ex, "An error occurred.");
             }
 
-            FileAssert.AreEqual(GetExpectedPath(logFileName), logFileName);
+            FileAssert.Exists(logFileName);
         }
     }
 }
