@@ -1,2 +1,0 @@
-[Warning]:	Logging.Test.FileLoggerTests	Warning
-[Error]:	Logging.Test.FileLoggerTests	Error
