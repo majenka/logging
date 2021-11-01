@@ -21,12 +21,12 @@ namespace ConsoleApp
 
         public void Run()
         {
-            logger.LogInformation("Running log service");
-            
+            logger.LogInformation("Running service");
+
             // Run your code here
 
-            logger.LogInformation("Finished running log service");
-            
+            logger.LogInformation("Finished running service");
+
             hostLifetime.StopApplication();
         }
     }
