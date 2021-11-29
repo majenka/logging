@@ -22,11 +22,11 @@ namespace Majenka.Logging
             this.categoryName = categoryName;
             this.options = options;
 
-            if (options.MaxFileSize <= 0) throw new ArgumentException("maxFileSize must be greater than 0");
-            if (options.MaxRetainedFiles < 0) throw new ArgumentException("maxRetainedFiles cannot less than 0");
-            if (options.Path == null ) throw new ArgumentException("path cannot be empty");
+            if (options.MaxFileSize <= 0) throw new ArgumentException("MaxFileSize must be greater than 0");
+            if (options.MaxRetainedFiles < 0) throw new ArgumentException("MaxRetainedFiles cannot less than 0");
+            if (options.Path == null ) throw new ArgumentException("Path cannot be empty");
 
-            logFileDirectory = Path.GetDirectoryName(options.Path) ?? throw new ArgumentException("path is invalid");
+            logFileDirectory = Path.GetDirectoryName(options.Path) ?? throw new ArgumentException("Path is invalid");
 
             Directory.CreateDirectory(logFileDirectory);
             fileInfo = new FileInfo(options.Path);
