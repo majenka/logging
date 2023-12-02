@@ -12,16 +12,9 @@ namespace ConsoleApp
     {
         static void Main()
         {
-            using (var host = CreateHostBuilder().Build())
-            {
-                var logService = host.Services.GetRequiredService<Service>();
-                logService.Run();
-            }
-        }
+            FileLoggerProvider? loggerProvider = null;
 
-        private static IHostBuilder CreateHostBuilder()
-        {
-            return Host.CreateDefaultBuilder()
+            var hostbuilder = Host.CreateDefaultBuilder()
                 .ConfigureAppConfiguration((hostContext, builder) =>
                 {
                     builder.Sources.Clear();
@@ -34,18 +27,32 @@ namespace ConsoleApp
                 {
                     var logLevel = hostContext.Configuration.GetValue<LogLevel>("Logging:LogLevel:Default");
                     var options = hostContext.Configuration.GetSection("Logging:File").Get<FileLoggerOptions>();
-                    
-                    builder.ClearProviders();
-                    builder.SetMinimumLevel(logLevel);
-                    builder.AddDebug();
-                    builder.AddConsole();
-                    builder.AddFile(options.Path, logLevel, options.MaxFileSize, options.MaxRetainedFiles);
+
+                    loggerProvider = new FileLoggerProvider(
+                        options.Path, 
+                        logLevel, 
+                        options.MaxFileSize, 
+                        options.MaxRetainedFiles, 
+                        options.LogDate);
+
+                    builder.ClearProviders()
+                        .SetMinimumLevel(logLevel)
+                        .AddDebug()
+                        .AddConsole()
+                        .AddProvider(loggerProvider);
+
                 })
-        
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddSingleton<Service>();
                 });
+
+            using (var host = hostbuilder.Build())
+            {
+                var logService = host.Services.GetRequiredService<Service>();
+                logService.Run();
+                loggerProvider?.Dispose();
+            }
         }
     }
 }

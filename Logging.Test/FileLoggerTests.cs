@@ -12,14 +12,14 @@ namespace Logging.Test
 {
     public class FileLoggerTests
     {
-        private IHost CreateHost(string logFileName, LogLevel globalLogLevel, LogLevel providerLogLevel, long maxFileSize = 5242880)
+        private IHost CreateHost(FileLoggerProvider fileLoggerProvider, LogLevel globalLogLevel)
         {
             var hostBuilder = Host.CreateDefaultBuilder()
                    .ConfigureLogging((hostContext, builder) =>
                    {
                        builder.ClearProviders();
                        builder.SetMinimumLevel(globalLogLevel);
-                       builder.AddFile(logFileName, logLevel: providerLogLevel, maxFileSize: maxFileSize, logDate: false);
+                       builder.AddProvider(fileLoggerProvider);
                    });
 
             return hostBuilder.Build();
@@ -71,10 +71,12 @@ namespace Logging.Test
             var logFileName = GetActualPath("trace_trace.txt");
             DeleteLogFile(logFileName);
 
-            var host = CreateHost(logFileName, LogLevel.Trace, LogLevel.Trace);
+            var provider = new FileLoggerProvider(logFileName, LogLevel.Trace, 5242880, 5, false);
+            var host = CreateHost(provider, LogLevel.Trace);
             var logger = host.Services.GetRequiredService<ILogger<FileLoggerTests>>();
 
             LogEach(logger);
+            provider.Dispose();
 
             FileAssert.AreEqual(GetExpectedPath(logFileName), logFileName);
         }
@@ -85,10 +87,12 @@ namespace Logging.Test
             var logFileName = GetActualPath("trace_warning.txt");
             DeleteLogFile(logFileName);
 
-            var host = CreateHost(logFileName, LogLevel.Trace, LogLevel.Warning);
+            var provider = new FileLoggerProvider(logFileName, LogLevel.Warning, 5242880, 5, false);
+            var host = CreateHost(provider, LogLevel.Trace);
             var logger = host.Services.GetRequiredService<ILogger<FileLoggerTests>>();
 
             LogEach(logger);
+            provider.Dispose();
 
             FileAssert.AreEqual(GetExpectedPath(logFileName), logFileName);
         }
@@ -99,10 +103,12 @@ namespace Logging.Test
             var logFileName = GetActualPath("warning_trace.txt");
             DeleteLogFile(logFileName);
 
-            var host = CreateHost(logFileName, LogLevel.Warning, LogLevel.Trace);
+            var provider = new FileLoggerProvider(logFileName, LogLevel.Trace, 5242880, 5, false);
+            var host = CreateHost(provider, LogLevel.Warning);
             var logger = host.Services.GetRequiredService<ILogger<FileLoggerTests>>();
 
             LogEach(logger);
+            provider.Dispose();
 
             FileAssert.AreEqual(GetExpectedPath(logFileName), logFileName);
         }
@@ -113,10 +119,12 @@ namespace Logging.Test
             var logFileName = GetActualPath("trace_information.txt");
             DeleteLogFile(logFileName);
 
-            var host = CreateHost(logFileName, LogLevel.Trace, LogLevel.Information);
+            var provider = new FileLoggerProvider(logFileName, LogLevel.Information, 5242880, 5, false);
+            var host = CreateHost(provider, LogLevel.Trace);
             var logger = host.Services.GetRequiredService<ILogger<FileLoggerTests>>();
 
             LogEach(logger);
+            provider.Dispose();
 
             FileAssert.AreEqual(GetExpectedPath(logFileName), logFileName);
         }
@@ -129,31 +137,78 @@ namespace Logging.Test
 
             Parallel.For(0, 100, (id) =>
             {
-                var host = CreateHost(logFileName, LogLevel.Trace, LogLevel.Information);
+                var provider = new FileLoggerProvider(logFileName, LogLevel.Information, 5242880, 5, false);
+                var host = CreateHost(provider, LogLevel.Trace);
                 var logger = host.Services.GetRequiredService<ILogger<FileLoggerTests>>();
 
                 for (int i = 0; i < 100; i++)
                 {
                     logger.LogInformation($"{id}\t{i}");
                 }
+
+                provider.Dispose();
             });
+
 
             Assert.AreEqual(new FileInfo(GetExpectedPath(logFileName)).Length, new FileInfo(logFileName).Length);
         }
 
         [Test]
-        public void TestRollOver()
+        public void TestRollOver1()
         {
-            var logFileName = GetActualPath("roll.txt"); 
+            var logFileName = GetActualPath("roll.txt");
             DeleteLogFile(logFileName);
+            DeleteLogFile($"{logFileName}.1");
+            DeleteLogFile($"{logFileName}.2");
+            DeleteLogFile($"{logFileName}.3");
+            DeleteLogFile($"{logFileName}.4");
+            DeleteLogFile($"{logFileName}.5");
+            DeleteLogFile($"{logFileName}.6");
 
-            var host = CreateHost(logFileName, LogLevel.Information, LogLevel.Trace, 1000);
+            var provider = new FileLoggerProvider(logFileName, LogLevel.Trace, 1000, 1, false);
+            var host = CreateHost(provider, LogLevel.Information);
             var logger = host.Services.GetRequiredService<ILogger<FileLoggerTests>>();
 
             for (int i = 0; i < 100; i++)
             {
                 logger.LogInformation($"Testing file roll over {i}");
             }
+
+            provider.Dispose();
+
+            var expectedFileName = GetExpectedPath(logFileName);
+
+            FileAssert.AreEqual(expectedFileName, logFileName);
+            FileAssert.AreEqual(expectedFileName + ".1", logFileName + ".1");
+            FileAssert.DoesNotExist(logFileName + ".2");
+            FileAssert.DoesNotExist(logFileName + ".3");
+            FileAssert.DoesNotExist(logFileName + ".4");
+            FileAssert.DoesNotExist(logFileName + ".5");
+            FileAssert.DoesNotExist(logFileName + ".6");
+        }
+
+        [Test]
+        public void TestRollOver5()
+        {
+            var logFileName = GetActualPath("roll.txt"); 
+            DeleteLogFile(logFileName);
+            DeleteLogFile($"{logFileName}.1");
+            DeleteLogFile($"{logFileName}.2");
+            DeleteLogFile($"{logFileName}.3");
+            DeleteLogFile($"{logFileName}.4");
+            DeleteLogFile($"{logFileName}.5");
+            DeleteLogFile($"{logFileName}.6");
+
+            var provider = new FileLoggerProvider(logFileName, LogLevel.Trace, 1000, 5, false);
+            var host = CreateHost(provider, LogLevel.Information);
+            var logger = host.Services.GetRequiredService<ILogger<FileLoggerTests>>();
+
+            for (int i = 0; i < 100; i++)
+            {
+                logger.LogInformation($"Testing file roll over {i}");
+            }
+
+            provider.Dispose();
 
             var expectedFileName = GetExpectedPath(logFileName);
 
@@ -172,7 +227,8 @@ namespace Logging.Test
             var logFileName = GetActualPath("stacktrace.txt");
             DeleteLogFile(logFileName);
 
-            var host = CreateHost(logFileName, LogLevel.Information, LogLevel.Trace, 1000);
+            var provider = new FileLoggerProvider(logFileName, LogLevel.Trace, 1000, 5, false);
+            var host = CreateHost(provider, LogLevel.Information);
 
             var logger = host.Services.GetRequiredService<ILogger<FileLoggerTests>>();
             try
@@ -192,6 +248,8 @@ namespace Logging.Test
             {
                 logger.LogError(ex, "An error occurred.");
             }
+
+            provider.Dispose();
 
             FileAssert.Exists(logFileName);
         }
