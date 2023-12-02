@@ -1,5 +1,5 @@
 # logging
-Logging library for dotnet 5
+Logging library for dotnet 7
 
 File Logger for dotnet core (C#)
 
