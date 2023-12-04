@@ -1,2 +1,6 @@
+******* 2 **********
 [Warning]:	Logging.Test.FileLoggerTests	Warning
 [Error]:	Logging.Test.FileLoggerTests	Error
+******* 0 **********
+******* 0 **********
+******* 0 **********

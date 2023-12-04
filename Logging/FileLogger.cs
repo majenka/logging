@@ -53,7 +53,7 @@ namespace Majenka.Logging
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
-            if(!isRunning)
+            if (!isRunning)
             {
                 return;
             }
@@ -86,7 +86,7 @@ namespace Majenka.Logging
             sb.Append(formatter(state, exception));
 
             lock (queueLock)
-            {                
+            {
                 logQueue.Enqueue(sb.ToString());
 
                 if (exception != null)
@@ -105,11 +105,11 @@ namespace Majenka.Logging
 
                     exception = exception.InnerException;
                 }
-            }
 
-            if (logQueue.Count > options.BufferLines - 1)
-            {
-                logEvent.Set(); // Signal the worker thread to process the log
+                if (logQueue.Count > options.BufferLines - 1)
+                {
+                    logEvent.Set(); // Signal the worker thread to process the log
+                }
             }
         }
 
@@ -140,8 +140,6 @@ namespace Majenka.Logging
 
                 lock (queueLock)
                 {
-                    //WriteLog($"******* {logQueue.Count} **********");
-
                     while (logQueue.Count > 0)
                     {
                         WriteLog(logQueue.Dequeue());
@@ -160,7 +158,7 @@ namespace Majenka.Logging
             if (options.MaxFileSize <= new FileInfo(options.Path).Length)
             {
                 RollFile(options.Path, 1);
-            }            
+            }
         }
 
         public void FlushLog()

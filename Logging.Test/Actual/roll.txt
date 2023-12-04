@@ -1,3 +1,4 @@
+[Information]:	Logging.Test.FileLoggerTests	Testing file roll over 89
 [Information]:	Logging.Test.FileLoggerTests	Testing file roll over 90
 [Information]:	Logging.Test.FileLoggerTests	Testing file roll over 91
 [Information]:	Logging.Test.FileLoggerTests	Testing file roll over 92
@@ -8,3 +9,7 @@
 [Information]:	Logging.Test.FileLoggerTests	Testing file roll over 97
 [Information]:	Logging.Test.FileLoggerTests	Testing file roll over 98
 [Information]:	Logging.Test.FileLoggerTests	Testing file roll over 99
+******* 0 **********
+******* 0 **********
+******* 0 **********
+******* 0 **********
