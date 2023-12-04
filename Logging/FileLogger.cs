@@ -9,20 +9,18 @@ using System.Threading.Tasks;
 
 namespace Majenka.Logging
 {
-    public class FileLogger : ILogger, IDisposable
+    public class FileLogger : ILogger
     {
         private readonly string categoryName;
         private readonly string logFileDirectory;
         private FileLoggerOptions options;
-        private FileInfo fileInfo;
 
         private static readonly object queueLock = new object();
-        private static readonly object fileLock = new object();
-
-        private readonly Queue<string> logQueue = new Queue<string>();
+        private static readonly Queue<string> logQueue = new Queue<string>();
+        
         private readonly AutoResetEvent logEvent = new AutoResetEvent(false);
-        private Thread workerThread;
-        private bool disposed = false;
+        private readonly Thread workerThread;
+
         private bool isRunning = true;
 
         public FileLogger(string categoryName, FileLoggerOptions options)
@@ -37,7 +35,6 @@ namespace Majenka.Logging
             logFileDirectory = Path.GetDirectoryName(options.Path) ?? throw new ArgumentException("Path is invalid");
 
             Directory.CreateDirectory(logFileDirectory);
-            fileInfo = new FileInfo(options.Path);
 
             // Start the worker thread
             workerThread = new Thread(WorkerThread);
@@ -71,24 +68,25 @@ namespace Majenka.Logging
                 return;
             }
 
-            lock (queueLock)
+            var sb = new StringBuilder();
+
+            if (options.LogDate)
             {
-                var sb = new StringBuilder();
+                sb.Append(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff zzz"));
+                sb.Append($"\t");
+            }
 
-                if (options.LogDate)
-                {
-                    sb.Append(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff zzz"));
-                    sb.Append($"\t");
-                }
+            sb.Append($"[{logLevel}]:\t");
 
-                sb.Append($"[{logLevel}]:\t");
+            if (categoryName != null)
+            {
+                sb.Append($"{categoryName}\t");
+            }
 
-                if (categoryName != null)
-                {
-                    sb.Append($"{categoryName}\t");
-                }
+            sb.Append(formatter(state, exception));
 
-                sb.Append(formatter(state, exception));
+            lock (queueLock)
+            {                
                 logQueue.Enqueue(sb.ToString());
 
                 if (exception != null)
@@ -107,7 +105,10 @@ namespace Majenka.Logging
 
                     exception = exception.InnerException;
                 }
+            }
 
+            if (logQueue.Count > options.BufferLines - 1)
+            {
                 logEvent.Set(); // Signal the worker thread to process the log
             }
         }
@@ -137,18 +138,13 @@ namespace Majenka.Logging
             {
                 logEvent.WaitOne(); // Wait for a signal to process the log
 
-                while (logQueue.Count > 0)
+                lock (queueLock)
                 {
-                    string logMessage;
+                    //WriteLog($"******* {logQueue.Count} **********");
 
-                    lock (queueLock)
+                    while (logQueue.Count > 0)
                     {
-                        logMessage = logQueue.Dequeue();
-                    }
-
-                    lock (fileLock)
-                    {
-                        WriteLog(logMessage);
+                        WriteLog(logQueue.Dequeue());
                     }
                 }
             }
@@ -156,51 +152,24 @@ namespace Majenka.Logging
 
         private void WriteLog(string logMessage)
         {
-            try
+            using (StreamWriter writer = File.AppendText(options.Path))
             {
-                using (StreamWriter writer = File.AppendText(options.Path))
-                {
-                    writer.WriteLine(logMessage);
-                }
+                writer.WriteLine(logMessage);
+            }
 
-                if (options.MaxFileSize <= new FileInfo(options.Path).Length)
-                {
-                    RollFile(options.Path, 1);
-                }
-            }
-            catch (Exception ex)
+            if (options.MaxFileSize <= new FileInfo(options.Path).Length)
             {
-                Console.WriteLine($"Error writing to log file: {ex.Message}");
-            }
+                RollFile(options.Path, 1);
+            }            
         }
 
-        private void FlushQueue()
+        public void FlushLog()
         {
             if (isRunning)
             {
                 isRunning = false;
                 logEvent.Set(); // Signal the worker thread to exit
                 workerThread.Join(); // Wait for the worker thread to finish
-            }
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposed)
-            {
-                if (disposing)
-                {
-                    // Dispose managed resources (flush logs, close connections, etc.)
-                    FlushQueue();
-                }
-
-                disposed = true;
             }
         }
     }

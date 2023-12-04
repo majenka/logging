@@ -12,18 +12,9 @@ namespace Majenka.Logging
 
         private ICollection<FileLogger> loggers { get; }
 
-        private bool disposed = false;
-
-        public FileLoggerProvider(string logFilePath, LogLevel logLevel, long maxFileSize, int maxRetainedFiles, bool logDate)
+        public FileLoggerProvider(FileLoggerOptions options)
         {
-            options = new FileLoggerOptions
-            {
-                Path = logFilePath,
-                MinLogLevel = logLevel,
-                MaxFileSize = maxFileSize,
-                MaxRetainedFiles = maxRetainedFiles,
-                LogDate = logDate
-            };
+            this.options = options ?? throw new ArgumentNullException(nameof(options));
 
             loggers = new List<FileLogger>();
         }
@@ -35,26 +26,17 @@ namespace Majenka.Logging
             return logger;
         }
 
-        public void Dispose()
+        public void FlushLoggers()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            foreach (var logger in loggers)
+            {
+                logger.FlushLog();
+            }
         }
 
-        protected virtual void Dispose(bool disposing)
+        public void Dispose()
         {
-            if (!disposed)
-            {
-                if (disposing)
-                {
-                    foreach (var logger in loggers)
-                    {
-                        logger.Dispose();
-                    }
-                }
-
-                disposed = true;
-            }
+            
         }
     }
 }

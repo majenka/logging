@@ -28,7 +28,7 @@ namespace ConsoleApp
             // Put your code here
             #region sample code
 
-            for (int i = 0; i < 1000; i++)
+            for (int i = 0; i < 10000; i++)
             {
                 logger.LogInformation($"This is line # {i}");
             }

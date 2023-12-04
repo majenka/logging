@@ -2,6 +2,7 @@ using Majenka.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using NuGet.Frameworks;
 using NUnit.Framework;
 using System;
 using System.IO;
@@ -23,6 +24,23 @@ namespace Logging.Test
                    });
 
             return hostBuilder.Build();
+        }
+
+        private static FileLoggerOptions CreateFileLoggerOptions(string logFileName, LogLevel minLogLevel,
+            int maxRetainedFiles = 5,
+            long maxFileSize = 5242880,
+            int bufferLines = 100,
+            bool logDate = false)
+        {
+            return new FileLoggerOptions
+            {
+                BufferLines = bufferLines,
+                LogDate = logDate,
+                MaxFileSize = maxFileSize,
+                MaxRetainedFiles = maxRetainedFiles,
+                MinLogLevel = minLogLevel,
+                Path = logFileName
+            };
         }
 
         private string GetActualPath(string filename)
@@ -71,15 +89,18 @@ namespace Logging.Test
             var logFileName = GetActualPath("trace_trace.txt");
             DeleteLogFile(logFileName);
 
-            var provider = new FileLoggerProvider(logFileName, LogLevel.Trace, 5242880, 5, false);
+            FileLoggerOptions fileLoggerOptions = CreateFileLoggerOptions(logFileName, LogLevel.Trace);
+
+            var provider = new FileLoggerProvider(fileLoggerOptions);
             var host = CreateHost(provider, LogLevel.Trace);
             var logger = host.Services.GetRequiredService<ILogger<FileLoggerTests>>();
 
             LogEach(logger);
-            provider.Dispose();
+            provider.FlushLoggers();
 
             FileAssert.AreEqual(GetExpectedPath(logFileName), logFileName);
         }
+
 
         [Test]
         public void TestTraceWarning()
@@ -87,12 +108,14 @@ namespace Logging.Test
             var logFileName = GetActualPath("trace_warning.txt");
             DeleteLogFile(logFileName);
 
-            var provider = new FileLoggerProvider(logFileName, LogLevel.Warning, 5242880, 5, false);
+            FileLoggerOptions fileLoggerOptions = CreateFileLoggerOptions(logFileName, LogLevel.Warning);
+
+            var provider = new FileLoggerProvider(fileLoggerOptions);
             var host = CreateHost(provider, LogLevel.Trace);
             var logger = host.Services.GetRequiredService<ILogger<FileLoggerTests>>();
 
             LogEach(logger);
-            provider.Dispose();
+            provider.FlushLoggers();
 
             FileAssert.AreEqual(GetExpectedPath(logFileName), logFileName);
         }
@@ -103,12 +126,14 @@ namespace Logging.Test
             var logFileName = GetActualPath("warning_trace.txt");
             DeleteLogFile(logFileName);
 
-            var provider = new FileLoggerProvider(logFileName, LogLevel.Trace, 5242880, 5, false);
+            FileLoggerOptions fileLoggerOptions = CreateFileLoggerOptions(logFileName, LogLevel.Trace);
+
+            var provider = new FileLoggerProvider(fileLoggerOptions);
             var host = CreateHost(provider, LogLevel.Warning);
             var logger = host.Services.GetRequiredService<ILogger<FileLoggerTests>>();
 
             LogEach(logger);
-            provider.Dispose();
+            provider.FlushLoggers();
 
             FileAssert.AreEqual(GetExpectedPath(logFileName), logFileName);
         }
@@ -119,12 +144,14 @@ namespace Logging.Test
             var logFileName = GetActualPath("trace_information.txt");
             DeleteLogFile(logFileName);
 
-            var provider = new FileLoggerProvider(logFileName, LogLevel.Information, 5242880, 5, false);
+            FileLoggerOptions fileLoggerOptions = CreateFileLoggerOptions(logFileName, LogLevel.Information);
+
+            var provider = new FileLoggerProvider(fileLoggerOptions);
             var host = CreateHost(provider, LogLevel.Trace);
             var logger = host.Services.GetRequiredService<ILogger<FileLoggerTests>>();
 
             LogEach(logger);
-            provider.Dispose();
+            provider.FlushLoggers();
 
             FileAssert.AreEqual(GetExpectedPath(logFileName), logFileName);
         }
@@ -135,9 +162,12 @@ namespace Logging.Test
             var logFileName = GetActualPath("file_lock.txt");
             DeleteLogFile(logFileName);
 
+            FileLoggerOptions fileLoggerOptions = CreateFileLoggerOptions(logFileName, LogLevel.Information);
+
+            var provider = new FileLoggerProvider(fileLoggerOptions);
+
             Parallel.For(0, 100, (id) =>
-            {
-                var provider = new FileLoggerProvider(logFileName, LogLevel.Information, 5242880, 5, false);
+            {                
                 var host = CreateHost(provider, LogLevel.Trace);
                 var logger = host.Services.GetRequiredService<ILogger<FileLoggerTests>>();
 
@@ -145,10 +175,9 @@ namespace Logging.Test
                 {
                     logger.LogInformation($"{id}\t{i}");
                 }
-
-                provider.Dispose();
             });
 
+            provider.FlushLoggers();
 
             Assert.AreEqual(new FileInfo(GetExpectedPath(logFileName)).Length, new FileInfo(logFileName).Length);
         }
@@ -165,7 +194,9 @@ namespace Logging.Test
             DeleteLogFile($"{logFileName}.5");
             DeleteLogFile($"{logFileName}.6");
 
-            var provider = new FileLoggerProvider(logFileName, LogLevel.Trace, 1000, 1, false);
+            FileLoggerOptions fileLoggerOptions = CreateFileLoggerOptions(logFileName, LogLevel.Information, 1, 1000);
+
+            var provider = new FileLoggerProvider(fileLoggerOptions);
             var host = CreateHost(provider, LogLevel.Information);
             var logger = host.Services.GetRequiredService<ILogger<FileLoggerTests>>();
 
@@ -174,7 +205,7 @@ namespace Logging.Test
                 logger.LogInformation($"Testing file roll over {i}");
             }
 
-            provider.Dispose();
+            provider.FlushLoggers();
 
             var expectedFileName = GetExpectedPath(logFileName);
 
@@ -199,7 +230,9 @@ namespace Logging.Test
             DeleteLogFile($"{logFileName}.5");
             DeleteLogFile($"{logFileName}.6");
 
-            var provider = new FileLoggerProvider(logFileName, LogLevel.Trace, 1000, 5, false);
+            FileLoggerOptions fileLoggerOptions = CreateFileLoggerOptions(logFileName, LogLevel.Information, 5, 1000);
+
+            var provider = new FileLoggerProvider(fileLoggerOptions);
             var host = CreateHost(provider, LogLevel.Information);
             var logger = host.Services.GetRequiredService<ILogger<FileLoggerTests>>();
 
@@ -208,7 +241,7 @@ namespace Logging.Test
                 logger.LogInformation($"Testing file roll over {i}");
             }
 
-            provider.Dispose();
+            provider.FlushLoggers();
 
             var expectedFileName = GetExpectedPath(logFileName);
 
@@ -227,7 +260,9 @@ namespace Logging.Test
             var logFileName = GetActualPath("stacktrace.txt");
             DeleteLogFile(logFileName);
 
-            var provider = new FileLoggerProvider(logFileName, LogLevel.Trace, 1000, 5, false);
+            FileLoggerOptions fileLoggerOptions = CreateFileLoggerOptions(logFileName, LogLevel.Information, 5, 1000);
+
+            var provider = new FileLoggerProvider(fileLoggerOptions);
             var host = CreateHost(provider, LogLevel.Information);
 
             var logger = host.Services.GetRequiredService<ILogger<FileLoggerTests>>();
@@ -249,7 +284,7 @@ namespace Logging.Test
                 logger.LogError(ex, "An error occurred.");
             }
 
-            provider.Dispose();
+            provider.FlushLoggers();
 
             FileAssert.Exists(logFileName);
         }

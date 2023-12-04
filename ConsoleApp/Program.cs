@@ -28,12 +28,7 @@ namespace ConsoleApp
                     var logLevel = hostContext.Configuration.GetValue<LogLevel>("Logging:LogLevel:Default");
                     var options = hostContext.Configuration.GetSection("Logging:File").Get<FileLoggerOptions>();
 
-                    loggerProvider = new FileLoggerProvider(
-                        options.Path, 
-                        logLevel, 
-                        options.MaxFileSize, 
-                        options.MaxRetainedFiles, 
-                        options.LogDate);
+                    loggerProvider = new FileLoggerProvider(options);
 
                     builder.ClearProviders()
                         .SetMinimumLevel(logLevel)
@@ -51,7 +46,7 @@ namespace ConsoleApp
             {
                 var logService = host.Services.GetRequiredService<Service>();
                 logService.Run();
-                loggerProvider?.Dispose();
+                loggerProvider?.FlushLoggers();
             }
         }
     }
