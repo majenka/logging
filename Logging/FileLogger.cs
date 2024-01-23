@@ -150,14 +150,21 @@ namespace Majenka.Logging
 
         private void WriteLog(string logMessage)
         {
-            using (StreamWriter writer = File.AppendText(options.Path))
+            try
             {
-                writer.WriteLine(logMessage);
-            }
+                using (StreamWriter writer = File.AppendText(options.Path))
+                {
+                    writer.WriteLine(logMessage);
+                }
 
-            if (options.MaxFileSize <= new FileInfo(options.Path).Length)
+                if (options.MaxFileSize <= new FileInfo(options.Path).Length)
+                {
+                    RollFile(options.Path, 1);
+                }
+            }
+            catch (IOException ex)
             {
-                RollFile(options.Path, 1);
+                Console.Error.WriteLine(ex.ToString());
             }
         }
 
