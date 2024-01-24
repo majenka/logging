@@ -140,9 +140,16 @@ namespace Majenka.Logging
 
                 lock (queueLock)
                 {
-                    while (logQueue.Count > 0)
+                    try
                     {
-                        WriteLog(logQueue.Dequeue());
+                        while (logQueue.Count > 0)
+                        {
+                            WriteLog(logQueue.Dequeue());
+                        }
+                    }
+                    catch (IOException ex)
+                    {
+                        Console.Error.WriteLine(ex.ToString()); // Break out and wait for next signal 
                     }
                 }
             }
@@ -150,21 +157,14 @@ namespace Majenka.Logging
 
         private void WriteLog(string logMessage)
         {
-            try
+            using (StreamWriter writer = File.AppendText(options.Path))
             {
-                using (StreamWriter writer = File.AppendText(options.Path))
-                {
-                    writer.WriteLine(logMessage);
-                }
-
-                if (options.MaxFileSize <= new FileInfo(options.Path).Length)
-                {
-                    RollFile(options.Path, 1);
-                }
+                writer.WriteLine(logMessage);
             }
-            catch (IOException ex)
+
+            if (options.MaxFileSize <= new FileInfo(options.Path).Length)
             {
-                Console.Error.WriteLine(ex.ToString());
+                RollFile(options.Path, 1);
             }
         }
 
