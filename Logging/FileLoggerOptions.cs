@@ -14,8 +14,10 @@ namespace Majenka.Logging
         public long MaxFileSize { get; set; }
         public int MaxRetainedFiles { get; set; }
         public int BufferLines { get; set; }
+        public int FlushInterval { get; set; }
         public string Path { get; set; }
         public LogLevel MinLogLevel { get; set; }
         public bool LogDate { get; set; }
+        public string DateFormat { get; set; }
     }
 }

@@ -2,7 +2,6 @@ using Majenka.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using NuGet.Frameworks;
 using NUnit.Framework;
 using System;
 using System.IO;
@@ -30,6 +29,7 @@ namespace Logging.Test
             int maxRetainedFiles = 5,
             long maxFileSize = 5242880,
             int bufferLines = 100,
+            int flushInterval = 2500,
             bool logDate = false)
         {
             return new FileLoggerOptions
@@ -39,7 +39,8 @@ namespace Logging.Test
                 MaxFileSize = maxFileSize,
                 MaxRetainedFiles = maxRetainedFiles,
                 MinLogLevel = minLogLevel,
-                Path = logFileName
+                Path = logFileName,
+                FlushInterval = flushInterval
             };
         }
 

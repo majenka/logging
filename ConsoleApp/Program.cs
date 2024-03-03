@@ -26,7 +26,7 @@ namespace ConsoleApp
                 .ConfigureLogging((hostContext, builder) =>
                 {
                     var logLevel = hostContext.Configuration.GetValue<LogLevel>("Logging:LogLevel:Default");
-                    var options = hostContext.Configuration.GetSection("Logging:File").Get<FileLoggerOptions>();
+                    var options = hostContext.Configuration.GetSection("Logging:File").Get<FileLoggerOptions>() ?? throw new ArgumentNullException(nameof(FileLoggerOptions));
 
                     loggerProvider = new FileLoggerProvider(options);
 

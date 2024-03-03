@@ -1,15 +1,14 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
+using System.Timers;
 
 namespace Majenka.Logging
 {
-    public class FileLogger : ILogger
+    public class FileLogger : ILogger, IDisposable
     {
         private readonly string categoryName;
         private readonly string logFileDirectory;
@@ -18,10 +17,10 @@ namespace Majenka.Logging
         private static readonly object queueLock = new object();
         private static readonly Queue<string> logQueue = new Queue<string>();
         
-        private readonly AutoResetEvent logEvent = new AutoResetEvent(false);
-        private readonly Thread workerThread;
+        private readonly System.Threading.Timer timer;
 
         private bool isRunning = true;
+        private bool disposed = false;
 
         public FileLogger(string categoryName, FileLoggerOptions options)
         {
@@ -30,15 +29,14 @@ namespace Majenka.Logging
 
             if (options.MaxFileSize <= 0) throw new ArgumentException("MaxFileSize must be greater than 0");
             if (options.MaxRetainedFiles < 0) throw new ArgumentException("MaxRetainedFiles cannot less than 0");
+            if (options.FlushInterval <= 0) throw new ArgumentException("FlushInterval must be greater than 0");
             if (options.Path == null) throw new ArgumentException("Path cannot be empty");
 
             logFileDirectory = Path.GetDirectoryName(options.Path) ?? throw new ArgumentException("Path is invalid");
 
             Directory.CreateDirectory(logFileDirectory);
 
-            // Start the worker thread
-            workerThread = new Thread(WorkerThread);
-            workerThread.Start();
+            timer = new System.Threading.Timer(TimerCallback, null, options.FlushInterval, Timeout.Infinite);
         }
 
         public Boolean IsEnabled(LogLevel logLevel)
@@ -46,7 +44,7 @@ namespace Majenka.Logging
             return logLevel >= options.MinLogLevel;
         }
 
-        public IDisposable? BeginScope<TState>(TState state)
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull
         {
             return default;
         }
@@ -72,7 +70,7 @@ namespace Majenka.Logging
 
             if (options.LogDate)
             {
-                sb.Append(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff zzz"));
+                sb.Append(DateTime.Now.ToString(options.DateFormat));
                 sb.Append($"\t");
             }
 
@@ -105,11 +103,6 @@ namespace Majenka.Logging
 
                     exception = exception.InnerException;
                 }
-
-                if (logQueue.Count > options.BufferLines - 1)
-                {
-                    logEvent.Set(); // Signal the worker thread to process the log
-                }
             }
         }
 
@@ -132,26 +125,31 @@ namespace Majenka.Logging
             File.Move(fileToRoll, rollFilePath);
         }
 
-        private void WorkerThread()
+        private void TimerCallback(object? state)
         {
-            while (isRunning)
-            {
-                logEvent.WaitOne(); // Wait for a signal to process the log
+            timer.Change(Timeout.Infinite, Timeout.Infinite);
 
-                lock (queueLock)
+            lock (queueLock)
+            {
+                TryFlushBuffer();
+            }
+
+            timer.Change(options.FlushInterval, options.FlushInterval);
+        }
+
+        private void TryFlushBuffer()
+        {
+            try
+            {
+                while (logQueue.Count > 0)
                 {
-                    try
-                    {
-                        while (logQueue.Count > 0)
-                        {
-                            WriteLog(logQueue.Dequeue());
-                        }
-                    }
-                    catch (IOException ex)
-                    {
-                        Console.Error.WriteLine(ex.ToString()); // Break out and wait for next signal 
-                    }
+                    WriteLog(logQueue.Dequeue());
                 }
+            }
+            catch (IOException ex)
+            {
+                // File may be locked by another process
+                Console.Error.WriteLine(ex.ToString());
             }
         }
 
@@ -168,13 +166,35 @@ namespace Majenka.Logging
             }
         }
 
+        /// <summary>
+        /// Flush log buffer and stop logging.
+        /// </summary>
         public void FlushLog()
         {
             if (isRunning)
             {
                 isRunning = false;
-                logEvent.Set(); // Signal the worker thread to exit
-                workerThread.Join(); // Wait for the worker thread to finish
+                TryFlushBuffer();
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposed)
+            {
+                if (disposing)
+                {
+                    timer.Dispose();
+                    FlushLog();
+                }
+
+                disposed = true;
             }
         }
     }

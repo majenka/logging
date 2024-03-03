@@ -1,13 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31727.386
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34511.84
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Logging", "Logging\Logging.csproj", "{CFE0F165-4ADC-4388-9561-4EC8072DE590}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleApp", "ConsoleApp\ConsoleApp.csproj", "{AB2F1ED7-BEF2-449E-B584-F7061C67E4F2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Logging.Test", "Logging.Test\Logging.Test.csproj", "{254DC3AB-3BE3-4AED-BA7E-744841F39C60}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Logging.Test", "Logging.Test\Logging.Test.csproj", "{254DC3AB-3BE3-4AED-BA7E-744841F39C60}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
