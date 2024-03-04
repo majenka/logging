@@ -13,7 +13,7 @@ Instructions for using FileLogger in a console app
 
 Configuring file logging in the appsettings.json file (create the appsettings.json file if it doesn't exist. MaxFileSize is in bytes).
 
-    {
+    
       "Logging": {
         "LogLevel": {
           "Default": "Information",
@@ -28,11 +28,11 @@ Configuring file logging in the appsettings.json file (create the appsettings.js
           "LogDate": true
         }
       }
-    }
+    
 
 Configuring file logging in Program.cs
 --------------------------------------
-      {
+      
         using Majenka.Logging;
         using Microsoft.Extensions.Configuration;
         using Microsoft.Extensions.DependencyInjection;
@@ -87,4 +87,4 @@ Configuring file logging in Program.cs
             // Flush loggers and stop logging
             loggerProvider?.FlushLoggers();
         }
-      }
+      
