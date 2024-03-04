@@ -12,7 +12,7 @@ Successfully used on Linux (Raspian, Debian)
 Instructions for using FileLogger in a console app
 --------------------------------------------------
 
-Configuring file logging in the appsettings.json file (create the appsettings.json file if it doesn't exist. MaxFileSize is in bytes).
+Configure file logging in the appsettings.json file (create the appsettings.json file if it doesn't exist. MaxFileSize is in bytes).
 
     
       "Logging": {
