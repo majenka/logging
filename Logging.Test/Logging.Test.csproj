@@ -17,4 +17,8 @@
     <ProjectReference Include="..\Logging\Logging.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Actual\" />
+  </ItemGroup>
+
 </Project>

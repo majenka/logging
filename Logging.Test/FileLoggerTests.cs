@@ -28,19 +28,15 @@ namespace Logging.Test
         private static FileLoggerOptions CreateFileLoggerOptions(string logFileName, LogLevel minLogLevel,
             int maxRetainedFiles = 5,
             long maxFileSize = 5242880,
-            int bufferLines = 100,
-            int flushInterval = 2500,
             bool logDate = false)
         {
             return new FileLoggerOptions
             {
-                BufferLines = bufferLines,
                 LogDate = logDate,
                 MaxFileSize = maxFileSize,
                 MaxRetainedFiles = maxRetainedFiles,
                 MinLogLevel = minLogLevel,
-                Path = logFileName,
-                FlushInterval = flushInterval
+                Path = logFileName
             };
         }
 
@@ -186,7 +182,7 @@ namespace Logging.Test
         [Test]
         public void TestRollOver1()
         {
-            var logFileName = GetActualPath("roll.txt");
+            var logFileName = GetActualPath("roll1.txt");
             DeleteLogFile(logFileName);
             DeleteLogFile($"{logFileName}.1");
             DeleteLogFile($"{logFileName}.2");
@@ -222,7 +218,7 @@ namespace Logging.Test
         [Test]
         public void TestRollOver5()
         {
-            var logFileName = GetActualPath("roll.txt"); 
+            var logFileName = GetActualPath("roll5.txt");
             DeleteLogFile(logFileName);
             DeleteLogFile($"{logFileName}.1");
             DeleteLogFile($"{logFileName}.2");

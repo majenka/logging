@@ -1,11 +1,33 @@
-﻿using ConsoleApp;
+Instructions for using FileLogger in a console app
+
+Configuring file logging in the appsettings.json file (create the appsettings.json file if it doesn't exist. MaxFileSize is in bytes).
+
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information"
+    },
+    "File": {
+      "Path": "/var/log/console-app.log",
+      "MaxFileSize": 5242880,
+      "MaxRetainedFiles": 5,
+      "DateFormat": "yyyy-MM-dd HH:mm:ss.fff",
+      "LogDate": true
+    }
+  }
+}
+
+Configuring file logging in Program.cs
+--------------------------------------
+
 using Majenka.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
-
 
 FileLoggerProvider? loggerProvider = null;
 
@@ -38,7 +60,7 @@ hostbuilder.ConfigureLogging((hostContext, builder) =>
 
 });
 
-// Configure services
+// Configure services (E.g. if your code is in a single service called Service)
 hostbuilder.ConfigureServices((hostContext, services) =>
 {
     services.AddSingleton<Service>();
@@ -54,4 +76,3 @@ using (var host = hostbuilder.Build())
     // Flush loggers and stop logging
     loggerProvider?.FlushLoggers();
 }
-       

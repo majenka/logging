@@ -15,12 +15,17 @@ namespace Majenka.Logging
         private FileLoggerOptions options;
 
         private static readonly object queueLock = new object();
-        private static readonly Queue<string> logQueue = new Queue<string>();
-        
-        private readonly System.Threading.Timer timer;
+        private static readonly Queue<FileLoggerLine> logQueue = new Queue<FileLoggerLine>();
+        private static System.Threading.Timer timer;
+        private static int flushInterval = 3000;
 
         private bool isRunning = true;
         private bool disposed = false;
+
+        static FileLogger()
+        {
+            timer = new System.Threading.Timer(TimerCallback, null, flushInterval, Timeout.Infinite);
+        }
 
         public FileLogger(string categoryName, FileLoggerOptions options)
         {
@@ -29,14 +34,11 @@ namespace Majenka.Logging
 
             if (options.MaxFileSize <= 0) throw new ArgumentException("MaxFileSize must be greater than 0");
             if (options.MaxRetainedFiles < 0) throw new ArgumentException("MaxRetainedFiles cannot less than 0");
-            if (options.FlushInterval <= 0) throw new ArgumentException("FlushInterval must be greater than 0");
             if (options.Path == null) throw new ArgumentException("Path cannot be empty");
 
             logFileDirectory = Path.GetDirectoryName(options.Path) ?? throw new ArgumentException("Path is invalid");
 
             Directory.CreateDirectory(logFileDirectory);
-
-            timer = new System.Threading.Timer(TimerCallback, null, options.FlushInterval, Timeout.Infinite);
         }
 
         public Boolean IsEnabled(LogLevel logLevel)
@@ -85,20 +87,20 @@ namespace Majenka.Logging
 
             lock (queueLock)
             {
-                logQueue.Enqueue(sb.ToString());
+                logQueue.Enqueue(new FileLoggerLine(options, sb.ToString()));
 
                 if (exception != null)
                 {
-                    logQueue.Enqueue("Stack trace:");
+                    logQueue.Enqueue(new FileLoggerLine(options, "Stack trace:"));
                 }
 
                 while (exception != null)
                 {
-                    logQueue.Enqueue($"\t{exception.GetType()}:\t{exception.Message}");
+                    logQueue.Enqueue(new FileLoggerLine(options, $"\t{exception.GetType()}:\t{exception.Message}"));
 
                     if (exception.StackTrace is string stackTrace)
                     {
-                        logQueue.Enqueue($"\t\t{stackTrace}");
+                        logQueue.Enqueue(new FileLoggerLine(options, $"\t\t{stackTrace}"));
                     }
 
                     exception = exception.InnerException;
@@ -106,7 +108,7 @@ namespace Majenka.Logging
             }
         }
 
-        private void RollFile(string fileToRoll, int toFileNumber)
+        private static void RollFile(FileLoggerOptions options, string fileToRoll, int toFileNumber)
         {
             var rollFilePath = $"{options.Path}.{toFileNumber}";
 
@@ -118,14 +120,14 @@ namespace Majenka.Logging
                 }
                 else
                 {
-                    RollFile(rollFilePath, ++toFileNumber);
+                    RollFile(options, rollFilePath, ++toFileNumber);
                 }
             }
 
             File.Move(fileToRoll, rollFilePath);
         }
 
-        private void TimerCallback(object? state)
+        private static void TimerCallback(object? state)
         {
             timer.Change(Timeout.Infinite, Timeout.Infinite);
 
@@ -134,10 +136,10 @@ namespace Majenka.Logging
                 TryFlushBuffer();
             }
 
-            timer.Change(options.FlushInterval, options.FlushInterval);
+            timer.Change(flushInterval, Timeout.Infinite);
         }
 
-        private void TryFlushBuffer()
+        private static void TryFlushBuffer()
         {
             try
             {
@@ -153,16 +155,16 @@ namespace Majenka.Logging
             }
         }
 
-        private void WriteLog(string logMessage)
+        private static void WriteLog(FileLoggerLine fileLoggerLine)
         {
-            using (StreamWriter writer = File.AppendText(options.Path))
+            using (StreamWriter writer = File.AppendText(fileLoggerLine.Options.Path))
             {
-                writer.WriteLine(logMessage);
+                writer.WriteLine(fileLoggerLine.Message);
             }
 
-            if (options.MaxFileSize <= new FileInfo(options.Path).Length)
+            if (fileLoggerLine.Options.MaxFileSize <= new FileInfo(fileLoggerLine.Options.Path).Length)
             {
-                RollFile(options.Path, 1);
+                RollFile(fileLoggerLine.Options, fileLoggerLine.Options.Path, 1);
             }
         }
 
@@ -190,7 +192,6 @@ namespace Majenka.Logging
             {
                 if (disposing)
                 {
-                    timer.Dispose();
                     FlushLog();
                 }
 
