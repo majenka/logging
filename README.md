@@ -9,4 +9,4 @@ Developed and tested on Windows 10 NTFS
 
 Successfully used on Linux (Raspian, Debian)
 
-See logging/readme.txt for instructions.
+See Logging/readme.txt for instructions.
