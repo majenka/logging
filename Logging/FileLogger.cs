@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading;
-using System.Timers;
 
 namespace Majenka.Logging
 {
@@ -16,15 +15,15 @@ namespace Majenka.Logging
 
         private static readonly object queueLock = new object();
         private static readonly Queue<FileLoggerLine> logQueue = new Queue<FileLoggerLine>();
-        private static System.Threading.Timer timer;
-        private static int flushInterval = 3000;
+        private static Timer timer;
+        private static int flushInterval = 3000; // milliseconds
 
         private bool isRunning = true;
         private bool disposed = false;
 
         static FileLogger()
         {
-            timer = new System.Threading.Timer(TimerCallback, null, flushInterval, Timeout.Infinite);
+            timer = new Timer(TimerCallback, null, flushInterval, Timeout.Infinite);
         }
 
         public FileLogger(string categoryName, FileLoggerOptions options)
@@ -32,8 +31,8 @@ namespace Majenka.Logging
             this.categoryName = categoryName;
             this.options = options;
 
-            if (options.MaxFileSize <= 0) throw new ArgumentException("MaxFileSize must be greater than 0");
-            if (options.MaxRetainedFiles < 0) throw new ArgumentException("MaxRetainedFiles cannot less than 0");
+            if (options.MaxFileSize < 3000) throw new ArgumentException("MaxFileSize cannot be less than 3000 bytes");  // 4kB block size allowing ~ 20% for metadata overhead
+            if (options.MaxRetainedFiles < 0) throw new ArgumentException("MaxRetainedFiles cannot be less than 0");    // 0 indicates don't retain any files and just overwrite
             if (options.Path == null) throw new ArgumentException("Path cannot be empty");
 
             logFileDirectory = Path.GetDirectoryName(options.Path) ?? throw new ArgumentException("Path is invalid");

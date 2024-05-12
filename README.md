@@ -81,9 +81,9 @@ Configuring file logging in Program.cs
         // Build host and run console app
         using (var host = hostbuilder.Build())
         {
-            var logService = host.Services.GetRequiredService<Service>();
+            var service = host.Services.GetRequiredService<Service>();
         
-            logService.Run();
+            service.Run();
         
             // Flush loggers and stop logging
             loggerProvider?.FlushLoggers();
