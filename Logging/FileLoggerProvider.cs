@@ -36,7 +36,10 @@ namespace Majenka.Logging
 
         public void Dispose()
         {
-            
+            foreach (var logger in loggers)
+            {
+                logger.Dispose();
+            }
         }
     }
 }

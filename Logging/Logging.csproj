@@ -4,7 +4,7 @@
     <PackageId>Majenka.Logging</PackageId>
     <Company>Majenka</Company>
     <Authors>Majenka</Authors>
-    <Version>8.0.3</Version>
+    <Version>8.0.4</Version>
     <PackageDescription>Logging library for dotnet core</PackageDescription>
     <RepositoryUrl>https://github.com/majenka/logging</RepositoryUrl>
     <TargetFramework>net8.0</TargetFramework>

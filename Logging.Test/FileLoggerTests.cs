@@ -191,7 +191,7 @@ namespace Logging.Test
             DeleteLogFile($"{logFileName}.5");
             DeleteLogFile($"{logFileName}.6");
 
-            FileLoggerOptions fileLoggerOptions = CreateFileLoggerOptions(logFileName, LogLevel.Information, 1, 1000);
+            FileLoggerOptions fileLoggerOptions = CreateFileLoggerOptions(logFileName, LogLevel.Information, 1, 3000);
 
             var provider = new FileLoggerProvider(fileLoggerOptions);
             var host = CreateHost(provider, LogLevel.Information);
@@ -227,13 +227,13 @@ namespace Logging.Test
             DeleteLogFile($"{logFileName}.5");
             DeleteLogFile($"{logFileName}.6");
 
-            FileLoggerOptions fileLoggerOptions = CreateFileLoggerOptions(logFileName, LogLevel.Information, 5, 1000);
+            FileLoggerOptions fileLoggerOptions = CreateFileLoggerOptions(logFileName, LogLevel.Information, 5, 3000);
 
             var provider = new FileLoggerProvider(fileLoggerOptions);
             var host = CreateHost(provider, LogLevel.Information);
             var logger = host.Services.GetRequiredService<ILogger<FileLoggerTests>>();
 
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < 300; i++)
             {
                 logger.LogInformation($"Testing file roll over {i}");
             }
@@ -257,7 +257,7 @@ namespace Logging.Test
             var logFileName = GetActualPath("stacktrace.txt");
             DeleteLogFile(logFileName);
 
-            FileLoggerOptions fileLoggerOptions = CreateFileLoggerOptions(logFileName, LogLevel.Information, 5, 1000);
+            FileLoggerOptions fileLoggerOptions = CreateFileLoggerOptions(logFileName, LogLevel.Information, 5, 3000);
 
             var provider = new FileLoggerProvider(fileLoggerOptions);
             var host = CreateHost(provider, LogLevel.Information);
